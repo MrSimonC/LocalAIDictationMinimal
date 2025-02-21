@@ -13,6 +13,16 @@ DictationMinimal is a lightweight C# application that records audio from your mi
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [Docker](https://www.docker.com/) (for running the Whisper ASR API server)
 
+## Instant Set up
+
+For CPU based systems, run docker command
+
+```sh
+docker run -d -p 9000:9000 -e ASR_MODEL=small.en -e ASR_ENGINE=openai_whisper onerahmet/openai-whisper-asr-webservice:latest
+```
+
+Then run the published executable from [this folder]("./published%20executable/DictationMinimal.exe").
+
 ## Setup
 
 1. **Clone the repository:**
