@@ -18,7 +18,7 @@ DictationMinimal is a lightweight C# application that records audio from your mi
 For CPU based systems, run docker command
 
 ```sh
-docker run -d -p 9000:9000 -e ASR_MODEL=small.en -e ASR_ENGINE=openai_whisper onerahmet/openai-whisper-asr-webservice:latest
+docker run --restart always -d -p 9000:9000 -e ASR_MODEL=small.en -e ASR_ENGINE=openai_whisper onerahmet/openai-whisper-asr-webservice:latest
 ```
 
 Then run the published executable from [this folder]("./published%20executable/DictationMinimal.exe").
