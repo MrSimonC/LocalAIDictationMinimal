@@ -9,17 +9,20 @@
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VoiceToAILibrary\VoiceToAILibrary.csproj" />
+    <None Remove="MicrophoneBlue.ico" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="MicrophoneBlue.ico">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    <EmbeddedResource Include="MicrophoneBlue.ico">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VoiceToAILibrary\VoiceToAILibrary.csproj" />
   </ItemGroup>
 
 </Project>

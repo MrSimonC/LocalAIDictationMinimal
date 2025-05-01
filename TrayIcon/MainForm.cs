@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using VoiceToAILibrary;
@@ -30,8 +31,18 @@ public partial class MainForm : Form
         ShowInTaskbar = false;
         Visible = false;
 
-        // - tray icon setup
-        notifyIcon.Icon = new Icon("MicrophoneBlue.ico");
+        var assembly = Assembly.GetExecutingAssembly();
+        using Stream? iconStream = assembly.GetManifestResourceStream("VoiceToAIDictation.MicrophoneBlue.ico");
+        if (iconStream != null)
+        {
+            this.Icon = new Icon(iconStream);
+            notifyIcon.Icon = new Icon(iconStream);
+        }
+        else
+        {
+            MessageBox.Show("Icon resource not found.");
+        }
+
         notifyIcon.Text = "VoiceToAI";
         notifyIcon.Visible = true;
 
