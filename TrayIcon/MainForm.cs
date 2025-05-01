@@ -72,17 +72,9 @@ public partial class MainForm : Form
         Application.Exit();
     }
 
-    //protected override void Dispose(bool disposing)
-    //{
-    //    if (disposing)
-    //    {
-    //        UnregisterHotKey(Handle, HOTKEY_ID);
-    //        notifyIcon.Dispose();
-    //        contextMenu.Dispose();
-    //    }
-    //    base.Dispose(disposing);
-    //}
-
     // - helper regex to turn newlines into spaces except after a dot
-    public static Regex NewlineToSpaceRegex() => new(@"(?<!\.)\r?\n");
+    public static Regex NewlineToSpaceRegex() => GenerateNewlineToSpaceRegex();
+    
+    [GeneratedRegex(@"(?<!\.)\r?\n")]
+    private static partial Regex GenerateNewlineToSpaceRegex();
 }
