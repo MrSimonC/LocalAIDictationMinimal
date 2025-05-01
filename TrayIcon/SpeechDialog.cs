@@ -20,20 +20,28 @@ public partial class SpeechDialog : Form
             Text = "finished speaking",
             Dock = DockStyle.Fill
         };
-        buttonDone.Click += async (s, e) =>
-        {
-            Console.WriteLine("--- Processing ---");
-            string textDictation = await voiceToAi
-                .VoiceProcessRecordingToTextAsync();
-            textDictation = textDictation.Trim();
-            textDictation = MainForm
-                .NewlineToSpaceRegex().Replace(textDictation, " ");
-            textDictation = textDictation.Replace("  ", " ");
-            await ClipboardService.SetTextAsync(textDictation);
-            Console.WriteLine("--- Raw transcription copied to clipboard ---");
-            Close();
-        };
-
+        buttonDone.Click += async (s, e) => await ProcessAndCloseAsync();
         Controls.Add(buttonDone);
+    }
+
+    protected override async void OnFormClosing(FormClosingEventArgs e)
+    {
+        await ProcessAndCloseAsync();
+        base.OnFormClosing(e);
+    }
+
+    private bool _processing = false;
+    private async Task ProcessAndCloseAsync()
+    {
+        if (_processing) return;
+        _processing = true;
+        Console.WriteLine("--- Processing ---");
+        string textDictation = await voiceToAi.VoiceProcessRecordingToTextAsync();
+        textDictation = textDictation.Trim();
+        textDictation = MainForm.NewlineToSpaceRegex().Replace(textDictation, " ");
+        textDictation = textDictation.Replace("  ", " ");
+        await ClipboardService.SetTextAsync(textDictation);
+        Console.WriteLine("--- Raw transcription copied to clipboard ---");
+        Close();
     }
 }

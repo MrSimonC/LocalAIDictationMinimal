@@ -12,4 +12,10 @@
     <ProjectReference Include="..\DictationMinimal\DictationMinimal.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="MicrophoneBlue.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

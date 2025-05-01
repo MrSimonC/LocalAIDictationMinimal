@@ -31,7 +31,7 @@ public partial class MainForm : Form
         Visible = false;
 
         // - tray icon setup
-        notifyIcon.Icon = SystemIcons.Application;
+        notifyIcon.Icon = new Icon("MicrophoneBlue.ico");
         notifyIcon.Text = "VoiceToAI";
         notifyIcon.Visible = true;
 
