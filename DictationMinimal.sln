@@ -5,7 +5,7 @@ VisualStudioVersion = 17.13.35818.85
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DictationMinimal", "DictationMinimal\DictationMinimal.csproj", "{CB5B89D7-B1C9-302F-1AE4-74F31A298D8D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TrayIcon", "TrayIcon\TrayIcon.csproj", "{A7E2F500-BE31-4A27-8D27-D57470B71F1A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoiceToAIDictation", "TrayIcon\VoiceToAIDictation.csproj", "{A7E2F500-BE31-4A27-8D27-D57470B71F1A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VoiceToAILibrary", "VoiceToAILibrary\VoiceToAILibrary.csproj", "{B6ED7A20-09A1-4000-BE86-7E1958B542F1}"
 EndProject
