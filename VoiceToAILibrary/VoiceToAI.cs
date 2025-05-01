@@ -5,16 +5,39 @@ using Whisper.net;
 
 namespace VoiceToAILibrary;
 
-public class VoiceToAi
+public class VoiceToAi : IDisposable
 {
     private const string OutputWaveFilePath = "output.wav";
     public WaveInEvent WaveIn { get; set; } = new WaveInEvent();
     private TaskCompletionSource<bool>? _recordingStoppedTcs;
     private string? _whisperModelPath = "ggml-models/ggml-small.en.bin"; // Default to bundled GGML model
 
+    // Fields to keep model and processor in memory
+    private WhisperFactory? _whisperFactory;
+    private WhisperProcessor? _whisperProcessor;
+    private bool _isInitialized = false;
+
     public void SetWhisperModelPath(string modelPath)
     {
         _whisperModelPath = modelPath;
+        _isInitialized = false; // Force re-init if model path changes
+    }
+
+    // Call this before first transcription
+    public void InitWhisper()
+    {
+        if (_isInitialized) return;
+        var modelPath = Path.Combine(AppContext.BaseDirectory, _whisperModelPath ?? "ggml-models/ggml-small.en.bin");
+        if (!File.Exists(modelPath))
+            throw new FileNotFoundException($"Model file not found: {modelPath}");
+        _whisperFactory?.Dispose();
+        _whisperFactory = WhisperFactory.FromPath(modelPath);
+        _whisperProcessor?.Dispose();
+        _whisperProcessor = _whisperFactory.CreateBuilder()
+            .WithLanguage("auto")
+            .SplitOnWord()
+            .Build();
+        _isInitialized = true;
     }
 
     public void VoiceInputRecordVoice()
@@ -37,6 +60,7 @@ public class VoiceToAi
 
     public async Task<string> VoiceProcessRecordingToTextAsync(string? initialPrompt = null)
     {
+        InitWhisper();
         _recordingStoppedTcs = new TaskCompletionSource<bool>();
         WaveIn.StopRecording();
         _ = await _recordingStoppedTcs.Task; // Wait for RecordingStopped and file release
@@ -45,19 +69,13 @@ public class VoiceToAi
         return transcription ?? string.Empty;
     }
 
-    private static async Task<string?> CallWhisperApiAsync(string audioPath, string? initialPrompt = null)
+    private async Task<string?> CallWhisperApiAsync(string audioPath, string? initialPrompt = null)
     {
-        var modelPath = Path.Combine(AppContext.BaseDirectory, "ggml-models", "ggml-small.en.bin");
-        if (!File.Exists(modelPath))
-            throw new FileNotFoundException($"Model file not found: {modelPath}");
-        using var whisperFactory = WhisperFactory.FromPath(modelPath);
-        using var processor = whisperFactory.CreateBuilder()
-            .WithLanguage("auto")
-            .SplitOnWord()
-            .Build();
+        if (_whisperProcessor is null)
+            throw new InvalidOperationException("Whisper processor not initialized. Call InitWhisper() first.");
         using var fileStream = File.OpenRead(audioPath);
         StringBuilder transcription = new();
-        await foreach (var result in processor.ProcessAsync(fileStream))
+        await foreach (var result in _whisperProcessor.ProcessAsync(fileStream))
         {
             // Only add words if explicit word-level timings are available
             if (result.Tokens != null && result.Tokens.Count() > 0)
@@ -89,4 +107,10 @@ public class VoiceToAi
         return false;
     }
 
+    public void Dispose()
+    {
+        _whisperProcessor?.Dispose();
+        _whisperFactory?.Dispose();
+        WaveIn?.Dispose();
+    }
 }
