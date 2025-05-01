@@ -82,7 +82,6 @@ public class VoiceToAi : IDisposable
             {
                 foreach (var word in result.Tokens)
                 {
-                    //var text = word.Text?.Trim() ?? "";
                     var text = word.Text ?? "";
                     if (!IsFilteredToken(text))
                     {
