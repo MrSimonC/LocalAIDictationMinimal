@@ -26,8 +26,9 @@ public partial class MainForm : Form
     public MainForm()
     {
         // - no visible window
-        Visible = false;
+        WindowState = FormWindowState.Minimized;
         ShowInTaskbar = false;
+        Visible = false;
 
         // - tray icon setup
         notifyIcon.Icon = SystemIcons.Application;
@@ -42,7 +43,7 @@ public partial class MainForm : Form
             MOD_CONTROL | MOD_ALT, (uint)Keys.A);
         if (!ok)
         {
-            _ = MessageBox.Show("Could not register hotkey - maybe it’s already taken?");
+            _ = MessageBox.Show("Could not register hotkey - maybe itï¿½s already taken?");
         }
     }
 
