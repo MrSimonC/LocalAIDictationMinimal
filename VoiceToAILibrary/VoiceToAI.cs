@@ -1,20 +1,30 @@
 ﻿using System.Net.Http.Headers;
+using System.Text;
 using NAudio.Wave;
+using Whisper.net;
 
 namespace VoiceToAILibrary;
 
-public class VoiceToAi(string? whisperServerIp = "localhost")
+public class VoiceToAi
 {
     private const string OutputWaveFilePath = "output.wav";
     public WaveInEvent WaveIn { get; set; } = new WaveInEvent();
-
     private TaskCompletionSource<bool>? _recordingStoppedTcs;
+    private string? _whisperModelPath = "ggml-models/ggml-small.en.bin"; // Default to bundled GGML model
+
+    public void SetWhisperModelPath(string modelPath)
+    {
+        _whisperModelPath = modelPath;
+    }
 
     public void VoiceInputRecordVoice()
     {
         // Dispose previous WaveIn if exists
         WaveIn?.Dispose();
-        WaveIn = new WaveInEvent();
+        WaveIn = new WaveInEvent
+        {
+            WaveFormat = new WaveFormat(16000, 1) // 16kHz mono required by Whisper.net
+        };
         WaveFileWriter writer = new(OutputWaveFilePath, WaveIn.WaveFormat);
         WaveIn.DataAvailable += (sender, args) => writer.Write(args.Buffer, 0, args.BytesRecorded);
         WaveIn.RecordingStopped += (sender, args) =>
@@ -35,26 +45,48 @@ public class VoiceToAi(string? whisperServerIp = "localhost")
         return transcription ?? string.Empty;
     }
 
-    private async Task<string?> CallWhisperApiAsync(string outputWaveFilePath, string? initialPrompt = null)
+    private static async Task<string?> CallWhisperApiAsync(string audioPath, string? initialPrompt = null)
     {
-        using HttpClient client = new();
-        client.DefaultRequestHeaders.Accept.Clear();
-        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-        using MultipartFormDataContent content = [];
-        ByteArrayContent fileContent = new(await File.ReadAllBytesAsync(outputWaveFilePath));
-        fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("audio/wav");
-
-        content.Add(fileContent, "audio_file", Path.GetFileName(outputWaveFilePath));
-        if (!string.IsNullOrEmpty(initialPrompt))
+        var modelPath = Path.Combine(AppContext.BaseDirectory, "ggml-models", "ggml-small.en.bin");
+        if (!File.Exists(modelPath))
+            throw new FileNotFoundException($"Model file not found: {modelPath}");
+        using var whisperFactory = WhisperFactory.FromPath(modelPath);
+        using var processor = whisperFactory.CreateBuilder()
+            .WithLanguage("auto")
+            .SplitOnWord()
+            .Build();
+        using var fileStream = File.OpenRead(audioPath);
+        StringBuilder transcription = new();
+        await foreach (var result in processor.ProcessAsync(fileStream))
         {
-            content.Add(new StringContent(initialPrompt), "initial_prompt");
+            // Only add words if explicit word-level timings are available
+            if (result.Tokens != null && result.Tokens.Count() > 0)
+            {
+                foreach (var word in result.Tokens)
+                {
+                    //var text = word.Text?.Trim() ?? "";
+                    var text = word.Text ?? "";
+                    if (!IsFilteredToken(text))
+                    {
+                        transcription.Append(text);
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine($"WARNING: No word-level timings for segment '{result.Text}'. Skipping.");
+            }
         }
-
-        string whisperApiUrl = $"http://{whisperServerIp}:9000/asr?encode=true&task=transcribe&language=en&word_timestamps=false&output=txt";
-        HttpResponseMessage response = await client.PostAsync(whisperApiUrl, content);
-
-        string responseString = await response.Content.ReadAsStringAsync();
-        return responseString;
+        return transcription.ToString();
     }
+
+    static bool IsFilteredToken(string word)
+    {
+        if (string.IsNullOrWhiteSpace(word)) return true;
+        word = word.Trim();
+        // Exclude any word that matches [anything]
+        if (System.Text.RegularExpressions.Regex.IsMatch(word, @"^\[.*\]$")) return true;
+        return false;
+    }
+
 }

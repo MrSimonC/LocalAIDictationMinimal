@@ -1,0 +1,1 @@
+VoiceToAILibrary/ggml-models/ggml-small.en.bin filter=lfs diff=lfs merge=lfs -text
