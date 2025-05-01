@@ -35,7 +35,7 @@ public partial class MainForm : Form
         using Stream? iconStream = assembly.GetManifestResourceStream("VoiceToAIDictation.MicrophoneBlue.ico");
         if (iconStream != null)
         {
-            this.Icon = new Icon(iconStream);
+            //this.Icon = new Icon(iconStream);
             notifyIcon.Icon = new Icon(iconStream);
         }
         else
