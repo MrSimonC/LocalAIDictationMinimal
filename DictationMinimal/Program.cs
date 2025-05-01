@@ -3,11 +3,11 @@ https://github.com/ahmetoner/whisper-asr-webservice
 Running on CPU only:
 docker run -d -p 9000:9000 -e ASR_MODEL=small.en -e ASR_ENGINE=openai_whisper onerahmet/openai-whisper-asr-webservice:latest
 */
+using System.Text.RegularExpressions;
 using TextCopy;
 using VoiceToAILibrary;
-using System.Text.RegularExpressions;
 
-var voiceToAi = new VoiceToAi();
+VoiceToAi voiceToAi = new();
 Console.WriteLine("--- Listening ---");
 voiceToAi.VoiceInputRecordVoice();
 Console.ReadKey(true);
@@ -18,9 +18,9 @@ textDictation = textDictation.Trim();
 textDictation = NewlineToSpaceRegex().Replace(textDictation, " ");
 textDictation = textDictation.Replace("  ", " ");
 await ClipboardService.SetTextAsync(textDictation);
-Console.WriteLine("--- Raw transcription copied to clipboard ---"); 
+Console.WriteLine("--- Raw transcription copied to clipboard ---");
 
-partial class Program
+internal partial class Program
 {
     [GeneratedRegex(@"(?<!\.)\r?\n\s*")]
     private static partial Regex NewlineToSpaceRegex();

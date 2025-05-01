@@ -31,7 +31,7 @@ public partial class MainForm : Form
         ShowInTaskbar = false;
         Visible = false;
 
-        var assembly = Assembly.GetExecutingAssembly();
+        Assembly assembly = Assembly.GetExecutingAssembly();
         using Stream? iconStream = assembly.GetManifestResourceStream("VoiceToAIDictation.MicrophoneBlue.ico");
         if (iconStream != null)
         {
@@ -40,7 +40,7 @@ public partial class MainForm : Form
         }
         else
         {
-            MessageBox.Show("Icon resource not found.");
+            _ = MessageBox.Show("Icon resource not found.");
         }
 
         notifyIcon.Text = "VoiceToAI";
@@ -100,7 +100,7 @@ public partial class MainForm : Form
 
     // - helper regex to turn newlines into spaces except after a dot
     public static Regex NewlineToSpaceRegex() => GenerateNewlineToSpaceRegex();
-    
+
     [GeneratedRegex(@"(?<!\.)\r?\n")]
     private static partial Regex GenerateNewlineToSpaceRegex();
 }

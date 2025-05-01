@@ -1,5 +1,5 @@
-﻿using VoiceToAILibrary;
-using TextCopy;
+﻿using TextCopy;
+using VoiceToAILibrary;
 
 namespace TrayIcon;
 
@@ -33,7 +33,11 @@ public partial class SpeechDialog : Form
     private bool _processing = false;
     private async Task ProcessAndCloseAsync()
     {
-        if (_processing) return;
+        if (_processing)
+        {
+            return;
+        }
+
         _processing = true;
         Console.WriteLine("--- Processing ---");
         string textDictation = await voiceToAi.VoiceProcessRecordingToTextAsync(callDocker: true);

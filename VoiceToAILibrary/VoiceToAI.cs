@@ -81,12 +81,12 @@ public partial class VoiceToAi : IDisposable
 
     private static async Task<string?> CallWhisperApiDockerAsync(string outputWaveFilePath, string? initialPrompt = null)
     {
-        using var client = new HttpClient();
+        using HttpClient client = new();
         client.DefaultRequestHeaders.Accept.Clear();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-        using var content = new MultipartFormDataContent();
-        var fileContent = new ByteArrayContent(await File.ReadAllBytesAsync(outputWaveFilePath));
+        using MultipartFormDataContent content = [];
+        ByteArrayContent fileContent = new(await File.ReadAllBytesAsync(outputWaveFilePath));
         fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("audio/wav");
 
         content.Add(fileContent, "audio_file", Path.GetFileName(outputWaveFilePath));
@@ -96,7 +96,7 @@ public partial class VoiceToAi : IDisposable
         }
 
         string whisperApiUrl = $"http://127.0.0.1:9000/asr?encode=true&task=transcribe&language=en&word_timestamps=false&output=txt";
-        var response = await client.PostAsync(whisperApiUrl, content);
+        HttpResponseMessage response = await client.PostAsync(whisperApiUrl, content);
 
         string responseString = await response.Content.ReadAsStringAsync();
         return responseString;
