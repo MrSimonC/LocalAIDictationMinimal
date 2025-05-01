@@ -1,4 +1,4 @@
-﻿using DictationMinimal;
+﻿using VoiceToAILibrary;
 using TextCopy;
 
 namespace TrayIcon;

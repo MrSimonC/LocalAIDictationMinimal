@@ -4,7 +4,7 @@ Running on CPU only:
 docker run -d -p 9000:9000 -e ASR_MODEL=small.en -e ASR_ENGINE=openai_whisper onerahmet/openai-whisper-asr-webservice:latest
 */
 using TextCopy;
-using DictationMinimal;
+using VoiceToAILibrary;
 using System.Text.RegularExpressions;
 
 var voiceToAi = new VoiceToAi();

@@ -1,7 +1,7 @@
 ﻿using System.Net.Http.Headers;
 using NAudio.Wave;
 
-namespace DictationMinimal;
+namespace VoiceToAILibrary;
 
 public class VoiceToAi(string? whisperServerIp = "localhost")
 {
