@@ -66,10 +66,24 @@ public partial class MainForm : Form
         _ = dlg.ShowDialog();
     }
 
+    private bool _allowClose = false;
+
+    protected override void OnFormClosing(FormClosingEventArgs e)
+    {
+        // Only allow closing if user selected Exit from tray
+        if (!_allowClose)
+        {
+            e.Cancel = true;
+            Hide();
+        }
+        base.OnFormClosing(e);
+    }
+
     private void Exit()
     {
-        _ = UnregisterHotKey(Handle, HOTKEY_ID);
+        _allowClose = true;
         notifyIcon.Visible = false;
+        Close();
         Application.Exit();
     }
 
