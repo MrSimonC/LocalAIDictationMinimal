@@ -1,11 +1,12 @@
 ﻿using System.Net.Http.Headers;
 using System.Text;
+using System.Text.RegularExpressions;
 using NAudio.Wave;
 using Whisper.net;
 
 namespace VoiceToAILibrary;
 
-public class VoiceToAi : IDisposable
+public partial class VoiceToAi : IDisposable
 {
     private const string OutputWaveFilePath = "output.wav";
     public WaveInEvent WaveIn { get; set; } = new WaveInEvent();
@@ -26,10 +27,17 @@ public class VoiceToAi : IDisposable
     // Call this before first transcription
     public void InitWhisper()
     {
-        if (_isInitialized) return;
-        var modelPath = Path.Combine(AppContext.BaseDirectory, _whisperModelPath ?? "ggml-models/ggml-small.en.bin");
+        if (_isInitialized)
+        {
+            return;
+        }
+
+        string modelPath = Path.Combine(AppContext.BaseDirectory, _whisperModelPath ?? "ggml-models/ggml-small.en.bin");
         if (!File.Exists(modelPath))
+        {
             throw new FileNotFoundException($"Model file not found: {modelPath}");
+        }
+
         _whisperFactory?.Dispose();
         _whisperFactory = WhisperFactory.FromPath(modelPath);
         _whisperProcessor?.Dispose();
@@ -58,34 +66,62 @@ public class VoiceToAi : IDisposable
         WaveIn.StartRecording();
     }
 
-    public async Task<string> VoiceProcessRecordingToTextAsync(string? initialPrompt = null)
+    public async Task<string> VoiceProcessRecordingToTextAsync(string? initialPrompt = null, bool callDocker = false)
     {
         InitWhisper();
         _recordingStoppedTcs = new TaskCompletionSource<bool>();
         WaveIn.StopRecording();
         _ = await _recordingStoppedTcs.Task; // Wait for RecordingStopped and file release
-        string? transcription = await CallWhisperApiAsync(OutputWaveFilePath, initialPrompt);
+        string? transcription = callDocker
+            ? await CallWhisperApiDockerAsync(OutputWaveFilePath, initialPrompt)
+            : await CallWhisperApiInBuiltAsync(OutputWaveFilePath, initialPrompt);
         File.Delete(OutputWaveFilePath);
         return transcription ?? string.Empty;
     }
 
-    private async Task<string?> CallWhisperApiAsync(string audioPath, string? initialPrompt = null)
+    private static async Task<string?> CallWhisperApiDockerAsync(string outputWaveFilePath, string? initialPrompt = null)
+    {
+        using var client = new HttpClient();
+        client.DefaultRequestHeaders.Accept.Clear();
+        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(await File.ReadAllBytesAsync(outputWaveFilePath));
+        fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse("audio/wav");
+
+        content.Add(fileContent, "audio_file", Path.GetFileName(outputWaveFilePath));
+        if (!string.IsNullOrEmpty(initialPrompt))
+        {
+            content.Add(new StringContent(initialPrompt), "initial_prompt");
+        }
+
+        string whisperApiUrl = $"http://127.0.0.1:9000/asr?encode=true&task=transcribe&language=en&word_timestamps=false&output=txt";
+        var response = await client.PostAsync(whisperApiUrl, content);
+
+        string responseString = await response.Content.ReadAsStringAsync();
+        return responseString;
+    }
+
+    private async Task<string?> CallWhisperApiInBuiltAsync(string audioPath, string? initialPrompt = null)
     {
         if (_whisperProcessor is null)
+        {
             throw new InvalidOperationException("Whisper processor not initialized. Call InitWhisper() first.");
-        using var fileStream = File.OpenRead(audioPath);
+        }
+
+        using FileStream fileStream = File.OpenRead(audioPath);
         StringBuilder transcription = new();
-        await foreach (var result in _whisperProcessor.ProcessAsync(fileStream))
+        await foreach (SegmentData result in _whisperProcessor.ProcessAsync(fileStream))
         {
             // Only add words if explicit word-level timings are available
-            if (result.Tokens != null && result.Tokens.Count() > 0)
+            if (result.Tokens != null && result.Tokens.Length > 0)
             {
-                foreach (var word in result.Tokens)
+                foreach (WhisperToken word in result.Tokens)
                 {
-                    var text = word.Text ?? "";
+                    string text = word.Text ?? "";
                     if (!IsFilteredToken(text))
                     {
-                        transcription.Append(text);
+                        _ = transcription.Append(text);
                     }
                 }
             }
@@ -97,13 +133,16 @@ public class VoiceToAi : IDisposable
         return transcription.ToString();
     }
 
-    static bool IsFilteredToken(string word)
+    private static bool IsFilteredToken(string word)
     {
-        if (string.IsNullOrWhiteSpace(word)) return true;
+        if (string.IsNullOrWhiteSpace(word))
+        {
+            return true;
+        }
+
         word = word.Trim();
         // Exclude any word that matches [anything]
-        if (System.Text.RegularExpressions.Regex.IsMatch(word, @"^\[.*\]$")) return true;
-        return false;
+        return SquareBrackets().IsMatch(word);
     }
 
     public void Dispose()
@@ -111,5 +150,9 @@ public class VoiceToAi : IDisposable
         _whisperProcessor?.Dispose();
         _whisperFactory?.Dispose();
         WaveIn?.Dispose();
+        GC.SuppressFinalize(this); // Ensures finalizer is suppressed for derived types
     }
+
+    [GeneratedRegex(@"^\[.*\]$")]
+    private static partial Regex SquareBrackets();
 }

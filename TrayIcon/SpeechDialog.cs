@@ -36,7 +36,7 @@ public partial class SpeechDialog : Form
         if (_processing) return;
         _processing = true;
         Console.WriteLine("--- Processing ---");
-        string textDictation = await voiceToAi.VoiceProcessRecordingToTextAsync();
+        string textDictation = await voiceToAi.VoiceProcessRecordingToTextAsync(callDocker: true);
         textDictation = textDictation.Trim();
         textDictation = MainForm.NewlineToSpaceRegex().Replace(textDictation, " ");
         textDictation = textDictation.Replace("  ", " ");
